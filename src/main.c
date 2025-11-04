@@ -1,62 +1,58 @@
+// Kirjastojen esittelyt
 
 #include <stdio.h>
 #include <string.h>
-
 #include <pico/stdlib.h>
-
 #include <FreeRTOS.h>
 #include <queue.h>
 #include <task.h>
-
 #include "tkjhat/sdk.h"
-
-// Exercise 4. Include the libraries necessaries to use the usb-serial-debug, and tinyusb
-// Tehtävä 4 . Lisää usb-serial-debugin ja tinyusbin käyttämiseen tarvittavat kirjastot.
-
 
 
 #define DEFAULT_STACK_SIZE 2048
 #define CDC_ITF_TX      1
 
 
-// Tehtävä 3: Tilakoneen esittely Add missing states.
-// Exercise 3: Definition of the state machine. Add missing states.
+// Tilakoneen esittely 
+
 enum state { WAITING=1, DATA_READY};
 enum state programState = WAITING;
 
-// Tehtävä 3: Valoisuuden globaali muuttuja
-// Exercise 3: Global variable for ambient light
-uint32_t ambientLight;
+// Imu-anturin globaalit muuttuja
+float ax, ay, az;
 
 static void btn_fxn(uint gpio, uint32_t eventMask) {
      uint8_t pinValue = gpio_get(LED1);
     pinValue = !pinValue;
     gpio_put(LED1, pinValue);
 }
-    // Tehtävä 1: Vaihda LEDin tila.
-    //            Tarkista SDK, ja jos et löydä vastaavaa funktiota, sinun täytyy toteuttaa se itse.
-    // Exercise 1: Toggle the LED. 
-    //             Check the SDK and if you do not find a function you would need to implement it yourself. 
 
 
+// Ensimmainen taski
+//
 static void sensor_task(void *arg){
     (void)arg;
-    init_veml6030();
-    // Tehtävä 2: Alusta valoisuusanturi. Etsi SDK-dokumentaatiosta sopiva funktio.
-    // Exercise 2: Init the light sensor. Find in the SDK documentation the adequate function.
-   
+    float ax, ay, az;               // Muuttujien esittely
+    init_ICM42670();                // IMU-anturin alustus
+    ICM42670_start_with_default_values();
+    
     for(;;){
         if (programState == WAITING) {
-            ambientLight = veml6030_read_light();
+            ICM42670_read_sensor_data(&ax, &ay, &az, NULL, NULL, NULL, NULL);
+            if (ay < -0.8) {
+                printf(".\n");
+            } 
+            else if (ax > 0.8) {
+                printf("-\n");
+            }
+            else if (ax < -0.8) {
+                printf("valilyonti\n");
+            }
             programState = DATA_READY;
         }
     
-        // printf("Valoisuus: %lu lux\n", lux); (OLI TEHTAVASSA 2)
 
-        // Tehtävä 2: Muokkaa tästä eteenpäin sovelluskoodilla. Kommentoi seuraava rivi.
-        //             
-        // Exercise 2: Modify with application code here. Comment following line.
-        //             Read sensor data and print it out as string; 
+    
         // tight_loop_contents(); 
 
 
@@ -67,16 +63,7 @@ static void sensor_task(void *arg){
         //             Jos olet oikeassa tilassa, tallenna anturin arvo tulostamisen sijaan
         //             globaaliin muuttujaan.
         //             Sen jälkeen muuta tilaa.
-        // Exercise 3: Modify previous code done for Exercise 2, in previous lines. 
-        //             If you are in adequate state, instead of printing save the sensor value 
-        //             into the global variable.
-        //             After that, modify state
-
-
-
-
-
-        
+       
         // Exercise 2. Just for sanity check. Please, comment this out
         // Tehtävä 2: Just for sanity check. Please, comment this out
         // printf("sensorTask\n");
@@ -91,44 +78,19 @@ static void print_task(void *arg){
     
     while(1){
         if (programState == DATA_READY) {
-        
-         printf("lux: %lu\n", ambientLight);
-
+           
             programState = WAITING;
         }
         
         // Tehtävä 3: Kun tila on oikea, tulosta sensoridata merkkijonossa debug-ikkunaan
         //            Muista tilamuutos
         //            Älä unohda kommentoida seuraavaa koodiriviä.
-        // Exercise 3: Print out sensor data as string to debug window if the state is correct
-        //             Remember to modify state
-        //             Do not forget to comment next line of code.
+       
         // tight_loop_contents();
         
 
 
         
-        // Exercise 4. Use the usb_serial_print() instead of printf or similar in the previous line.
-        //             Check the rest of the code that you do not have printf (substitute them by usb_serial_print())
-        //             Use the TinyUSB library to send data through the other serial port (CDC 1).
-        //             You can use the functions at https://github.com/hathach/tinyusb/blob/master/src/class/cdc/cdc_device.h
-        //             You can find an example at hello_dual_cdc
-        //             The data written using this should be provided using csv
-        //             timestamp, luminance
-        // Tehtävä 4. Käytä usb_serial_print()-funktiota printf:n tai vastaavien sijaan edellisellä rivillä.
-        //            Tarkista myös muu koodi ja varmista, ettei siinä ole printf-kutsuja
-        //            (korvaa ne usb_serial_print()-funktiolla).
-        //            Käytä TinyUSB-kirjastoa datan lähettämiseen toisen sarjaportin (CDC 1) kautta.
-        //            Voit käyttää funktioita: https://github.com/hathach/tinyusb/blob/master/src/class/cdc/cdc_device.h
-        //            Esimerkki löytyy hello_dual_cdc-projektista.
-        //            Tällä menetelmällä kirjoitettu data tulee antaa CSV-muodossa:
-        //            timestamp, luminance
-
-
-
-
-        // Exercise 3. Just for sanity check. Please, comment this out
-        // Tehtävä 3: Just for sanity check. Please, comment this out
         //printf("printTask\n");
         
         // Do not remove this
@@ -151,16 +113,7 @@ static void usbTask(void *arg) {
 
 int main() {
 
-    // Exercise 4: Comment the statement stdio_init_all(); 
-    //             Instead, add AT THE END OF MAIN (before vTaskStartScheduler();) adequate statements to enable the TinyUSB library and the usb-serial-debug.
-    //             You can see hello_dual_cdc for help
-    //             In CMakeLists.txt add the cfg-dual-usbcdc
-    //             In CMakeLists.txt deactivate pico_enable_stdio_usb
-    // Tehtävä 4:  Kommentoi lause stdio_init_all();
-    //             Sen sijaan lisää MAIN LOPPUUN (ennen vTaskStartScheduler();) tarvittavat komennot aktivoidaksesi TinyUSB-kirjaston ja usb-serial-debugin.
-    //             Voit katsoa apua esimerkistä hello_dual_cdc.
-    //             Lisää CMakeLists.txt-tiedostoon cfg-dual-usbcdc
-    //             Poista CMakeLists.txt-tiedostosta käytöstä pico_enable_stdio_usb
+   
 
     stdio_init_all();
 
@@ -172,8 +125,7 @@ int main() {
     init_hat_sdk();
     sleep_ms(300); //Wait some time so initialization of USB and hat is done.
 
-    // Exercise 1: Initialize the button and the led and define an register the corresponding interrupton.
-    //             Interruption handler is defined up as btn_fxn
+    
     // Tehtävä 1:  Alusta painike ja LEd ja rekisteröi vastaava keskeytys.
     //             Keskeytyskäsittelijä on määritelty yläpuolella nimellä btn_fxn
     init_red_led ();
