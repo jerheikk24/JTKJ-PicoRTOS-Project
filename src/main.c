@@ -15,24 +15,19 @@
 
 // Tilakoneen esittely 
 
-enum state { WAITING=1, DATA_READY};
+enum state { WAITING, DATA_READY, VALMIS};
 enum state programState = WAITING;
 
-// Imu-anturin globaalit muuttuja
+// Imu-anturin globaalit muuttujat ja niiden esittely
 float ax, ay, az;
-
-static void btn_fxn(uint gpio, uint32_t eventMask) {
-     uint8_t pinValue = gpio_get(LED1);
-    pinValue = !pinValue;
-    gpio_put(LED1, pinValue);
-}
-
+char symboli;
 
 // Ensimmainen taski
-//
+
 static void sensor_task(void *arg){
     (void)arg;
-    float ax, ay, az;               // Muuttujien esittely
+    
+
     init_ICM42670();                // IMU-anturin alustus
     ICM42670_start_with_default_values();
     
@@ -40,33 +35,25 @@ static void sensor_task(void *arg){
         if (programState == WAITING) {
             ICM42670_read_sensor_data(&ax, &ay, &az, NULL, NULL, NULL, NULL);
             if (ay < -0.8) {
-                printf(".\n");
+                symboli = '.';
+                programState = DATA_READY;
             } 
             else if (ax > 0.8) {
-                printf("-\n");
+                symboli = '-';
+                programState = DATA_READY;
             }
             else if (ax < -0.8) {
-                printf("valilyonti\n");
+                symboli = (char)' ';
+                programState = DATA_READY;
             }
-            programState = DATA_READY;
         }
     
-
-    
-        // tight_loop_contents(); 
-
-
-   
-
 
         // Tehtävä 3:  Muokkaa aiemmin Tehtävässä 2 tehtyä koodia ylempänä.
         //             Jos olet oikeassa tilassa, tallenna anturin arvo tulostamisen sijaan
         //             globaaliin muuttujaan.
         //             Sen jälkeen muuta tilaa.
-       
-        // Exercise 2. Just for sanity check. Please, comment this out
-        // Tehtävä 2: Just for sanity check. Please, comment this out
-        // printf("sensorTask\n");
+
 
         // Do not remove this
         vTaskDelay(pdMS_TO_TICKS(500));
@@ -78,23 +65,14 @@ static void print_task(void *arg){
     
     while(1){
         if (programState == DATA_READY) {
-           
+            programState = VALMIS;
+            printf("%c", symboli);        // HUOM tarkista tarviiko VALMIS tilaa
             programState = WAITING;
         }
         
-        // Tehtävä 3: Kun tila on oikea, tulosta sensoridata merkkijonossa debug-ikkunaan
-        //            Muista tilamuutos
-        //            Älä unohda kommentoida seuraavaa koodiriviä.
-       
-        // tight_loop_contents();
-        
-
-
-        
-        //printf("printTask\n");
         
         // Do not remove this
-        vTaskDelay(pdMS_TO_TICKS(1000));
+        vTaskDelay(pdMS_TO_TICKS(2000));
     }
 }
 
@@ -128,9 +106,7 @@ int main() {
     
     // Tehtävä 1:  Alusta painike ja LEd ja rekisteröi vastaava keskeytys.
     //             Keskeytyskäsittelijä on määritelty yläpuolella nimellä btn_fxn
-    init_red_led ();
-    init_button1 ();
-    gpio_set_irq_enabled_with_callback(BUTTON1, GPIO_IRQ_EDGE_FALL, true, btn_fxn);
+    
 
 
 
