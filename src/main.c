@@ -15,12 +15,13 @@
 
 // Tilakoneen esittely 
 
-enum state { WAITING, DATA_READY, VALMIS};
+enum state { WAITING, DATA_READY,};
 enum state programState = WAITING;
 
 // Imu-anturin globaalit muuttujat ja niiden esittely
 float ax, ay, az;
 char symboli;
+int counter = 0;
 
 // Ensimmainen taski
 
@@ -36,27 +37,24 @@ static void sensor_task(void *arg){
             ICM42670_read_sensor_data(&ax, &ay, &az, NULL, NULL, NULL, NULL);
             if (ay < -0.8) {
                 symboli = '.';
+                counter = 0;
                 programState = DATA_READY;
             } 
             else if (ax > 0.8) {
                 symboli = '-';
+                counter = 0;
                 programState = DATA_READY;
             }
             else if (ax < -0.8) {
                 symboli = (char)' ';
+                counter++;
                 programState = DATA_READY;
             }
+
         }
-    
-
-        // Tehtävä 3:  Muokkaa aiemmin Tehtävässä 2 tehtyä koodia ylempänä.
-        //             Jos olet oikeassa tilassa, tallenna anturin arvo tulostamisen sijaan
-        //             globaaliin muuttujaan.
-        //             Sen jälkeen muuta tilaa.
-
 
         // Do not remove this
-        vTaskDelay(pdMS_TO_TICKS(500));
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
 
@@ -65,68 +63,29 @@ static void print_task(void *arg){
     
     while(1){
         if (programState == DATA_READY) {
-            programState = VALMIS;
-            printf("%c", symboli);        // HUOM tarkista tarviiko VALMIS tilaa
+            printf("%c", symboli);
+            if (counter == 2){
+                printf("\n");
+                counter=0;
+            }
             programState = WAITING;
         }
         
         
         // Do not remove this
-        vTaskDelay(pdMS_TO_TICKS(2000));
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
 
 
-// Exercise 4: Uncomment the following line to activate the TinyUSB library.  
-// Tehtävä 4:  Poista seuraavan rivin kommentointi aktivoidaksesi TinyUSB-kirjaston. 
-
-/*
-static void usbTask(void *arg) {
-    (void)arg;
-    while (1) {
-        tud_task();              // With FreeRTOS wait for events
-                                 // Do not add vTaskDelay. 
-    }
-}*/
-
 int main() {
-
-   
-
     stdio_init_all();
-
-    // Uncomment this lines if you want to wait till the serial monitor is connected
-    /*while (!stdio_usb_connected()){
-        sleep_ms(10);
-    }*/ 
-    
     init_hat_sdk();
-    sleep_ms(300); //Wait some time so initialization of USB and hat is done.
+    sleep_ms(300); 
 
-    
-    // Tehtävä 1:  Alusta painike ja LEd ja rekisteröi vastaava keskeytys.
-    //             Keskeytyskäsittelijä on määritelty yläpuolella nimellä btn_fxn
-    
-
-
-
-    
-    
     TaskHandle_t hSensorTask, hPrintTask, hUSB = NULL;
 
-    // Exercise 4: Uncomment this xTaskCreate to create the task that enables dual USB communication.
-    // Tehtävä 4: Poista tämän xTaskCreate-rivin kommentointi luodaksesi tehtävän,
-    // joka mahdollistaa kaksikanavaisen USB-viestinnän.
-
-    /*
-    xTaskCreate(usbTask, "usb", 2048, NULL, 3, &hUSB);
-    #if (configNUMBER_OF_CORES > 1)
-        vTaskCoreAffinitySet(hUSB, 1u << 0);
-    #endif
-    */
-
-
-    // Create the tasks with xTaskCreate
+    // 
     BaseType_t result = xTaskCreate(sensor_task, // (en) Task function
                 "sensor",                        // (en) Name of the task 
                 DEFAULT_STACK_SIZE,              // (en) Size of the stack for this task (in words). Generally 1024 or 2048
@@ -153,7 +112,5 @@ int main() {
     // Start the scheduler (never returns)
     vTaskStartScheduler();
     
-    // Never reach this line.
     return 0;
 }
-
