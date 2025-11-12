@@ -1,4 +1,4 @@
-// Kirjastojen esittelyt
+// Kirjastojen esittelyt, suoraan JTKJ 2. labrasessiosta
 
 #include <stdio.h>
 #include <string.h>
@@ -54,7 +54,7 @@ static void sensor_task(void *arg){                   //!! tehnyt Jere H !!
 
         }
 
-        // 1 sekunnin viive tehtävän suorittamisessa
+        // "odottaa" 1 sekunnin
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
@@ -76,7 +76,7 @@ static void print_task(void *arg){              //!! Tehnyt Aleksi P ja Aleksi V
         }
         
         
-        // 1 sekunnin viive tehtävän suorittamisessa
+        // "odottaa" 1 sekunnin
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
@@ -86,7 +86,7 @@ static void print_task(void *arg){              //!! Tehnyt Aleksi P ja Aleksi V
 
 int main() {
     stdio_init_all();
-    init_hat_sdk();                                     // JTKJ:n alustus
+    init_hat_sdk();                                     // JTK:n alustus
     sleep_ms(300);                                      // Odottaa 0.3s, etta USB ja anturi kerkeaa kaynnistya
 
     TaskHandle_t hSensorTask, hPrintTask, hUSB = NULL;
