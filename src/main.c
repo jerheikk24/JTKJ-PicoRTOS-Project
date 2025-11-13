@@ -1,10 +1,12 @@
-// Kirjastojen esittelyt, suoraan JTKJ 2. labrasessiosta
+// Jere Heikkila, Aleksi Pietila & Aleksi Vuopala
+// Kaikille jaetaan pisteet tasan
+
+
+// Kirjastojen esittelyt, suoraan JTKJ 2. labrasessiosta, osa otettu pois joita ei tarvita
 
 #include <stdio.h>
-#include <string.h>
 #include <pico/stdlib.h>
 #include <FreeRTOS.h>
-#include <queue.h>
 #include <task.h>
 #include "tkjhat/sdk.h"
 
